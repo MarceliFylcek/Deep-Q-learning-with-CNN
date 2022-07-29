@@ -35,7 +35,7 @@ class FlappyBird:
         self.done = 0
 
         self.state_rects = []
-        self.state_rects.extend( (pygame.Rect(10, 430, 100, 10), pygame.Rect(10, 460, 100, 10), pygame.Rect(10, 490, 100, 10), pygame.Rect(10, 520, 100, 10)) )
+        self.state_rects.extend( (pygame.Rect(10, 430, 100, 10), pygame.Rect(10, 460, 100, 10))) #pygame.Rect(10, 490, 100, 10), pygame.Rect(10, 520, 100, 10)) )
         self.action_rects = []
         self.action_rects.extend( (pygame.Rect(self.bird.rect.x+self.bird.rect.width/8, 0, 10, 0), pygame.Rect(self.bird.rect.x+self.bird.rect.width/8, 0, 10, 0)) )
 
@@ -79,18 +79,12 @@ class FlappyBird:
         self.animation += 0.3
 
         for s in self.state_rects:
-            states = self.get_state()
-            states[0] = states[0]/3
-            states[1] = states[1]*7
-            states[2] = states[2]/3
-            states[3] = states[3]/3
-            s.width = states[self.state_rects.index(s)]
-            pygame.draw.rect(self.screen, (50, 50, 255), s)
+           states = self.get_state()
+           s.width = states[self.state_rects.index(s)]*100
+           pygame.draw.rect(self.screen, (50, 50, 255), s)
 
-        q_0 = q_0
-        q_1 = q_1
-        sub = q_0 - q_1
-        sub = sub/2.5
+        #predictions
+        sub = 2000*(q_0 - q_1)
         if sub >= 0:
             q_0 = sub
             q_1 = 0
@@ -106,27 +100,35 @@ class FlappyBird:
 
 
         pygame.display.update()
-        self.clock.tick(self.FPS)
+        #self.clock.tick(self.FPS)
 
 
     def step(self, action):
         self.bird.move(action)
         for p in self.pipes:
             p.move()
-        self.reward += 1
+
         if self.bird.check_collision(self.pipes[0].rect[0], self.pipes[0].rect[1], self.pipes[1].rect[0], self.pipes[1].rect[1]):
             self.done = 1
 
-        return [self.get_state(), self.reward, self.done, " "]
+        #reward for surviving
+        self.reward = 0
+        state = self.get_state() #may change reward
+        return [state, self.reward, self.done, " "]
 
 
     def get_state(self):
-        dist = self.pipes[self.closest_pipe_index].rect[0].x + self.pipes[self.closest_pipe_index].rect[0].width - (self.bird.rect.x)
-        if dist < 0:
+        dist_x = self.pipes[self.closest_pipe_index].rect[0].x + self.pipes[self.closest_pipe_index].rect[0].width - (self.bird.rect.x)
+        dist_y = self.pipes[self.closest_pipe_index].rect[0].y - (self.bird.rect.y + self.bird.rect.height)
+        if dist_x < 0:
+            self.reward = 1
             self.closest_pipe_index += 1
             if(self.closest_pipe_index)==2: self.closest_pipe_index = 0
+        else:
+            self.reward = 0
 
-        return [self.bird.rect.y, self.bird.frame, dist, self.pipes[self.closest_pipe_index].rect[0].y]
+        #return [(self.bird.rect.y+80)/580.0, (self.bird.frame+1)/16.0, dist_x/522.0, (dist_y/1000.0 + 0.5)]
+        return [dist_x/522.0, (dist_y/600.0 + 0.5)]
 
 class Bird:
     def __init__(self, RES):
@@ -138,17 +140,17 @@ class Bird:
         self.rotation = 0
 
     def move(self, action):
-        if action == 1 and self.frame < 10:
-            self.frame = 16
+        if action == 1 and self.frame < 4:
+            self.frame = 6
 
         if self.frame > 0:
-            self.rect.y -= (int)(self.frame*self.frame*0.05)
+            self.rect.y -= (int)(self.frame*self.frame*0.6)
             self.frame -= 1
 
         elif self.frame == 0:
             self.frame -= 1
         else:
-            self.rect.y += 8.8
+            self.rect.y += 19
 
 
     def check_collision(self, p1, p2, p3, p4):
@@ -190,8 +192,8 @@ class Pipes:
         self.RES = RES
 
     def move(self):
-        self.rect[0].x -= 3
-        self.rect[1].x -= 3
+        self.rect[0].x -= 10
+        self.rect[1].x -= 10
         if self.rect[0].x < -self.rect[0].width:
             self.rect[0].x = self.RES[0]
             self.rect[1].x = self.RES[0]
