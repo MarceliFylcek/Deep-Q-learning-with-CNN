@@ -134,8 +134,8 @@ for e in range(1, 10000):
             epochs += 1
 
         if epochs%500 == 0 and len(agent.memory) == agent.buffer_size:
-            agent.save('model-'+str(epochs)) #zapisz model
-            with open(r'model'+str(epochs)+'.txt', 'w') as fp: #zapisz wyniki do txt
+            agent.save('model-'+str(len(record))) #zapisz model
+            with open(r'model'+str(len(record))+'.txt', 'w') as fp: #zapisz wyniki do txt
                 for item in record:
                     # write each item on a new line
                     fp.write("%s\n" % item)
