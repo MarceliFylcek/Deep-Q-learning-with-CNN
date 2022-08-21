@@ -96,6 +96,7 @@ agent = DQNAgent(state_size, action_size)
 # agent.epsilon = 0
 score = 0
 record = []
+epsilon_hist = []
 epochs = 0
 for e in range(1, 10000):
 
@@ -118,12 +119,13 @@ for e in range(1, 10000):
         next_state = np.reshape(next_state, [1, state_size])
         agent.remember(state, action, reward, next_state, done)
         state = next_state
-
+        print(epochs)
         score += 1
         if env.done == 1:
             if len(agent.memory) == agent.buffer_size:
                 print('score:' + str(score))
                 record.append(score)
+                epsilon_hist.append(agent.epsilon)
             break
 
 
@@ -131,15 +133,22 @@ for e in range(1, 10000):
             agent.replay(e)
             epochs += 1
 
+        if epochs%500 == 0 and len(agent.memory) == agent.buffer_size:
+            agent.save('model-'+str(epochs)) #zapisz model
+            with open(r'model'+str(epochs)+'.txt', 'w') as fp: #zapisz wyniki do txt
+                for item in record:
+                    # write each item on a new line
+                    fp.write("%s\n" % item)
+            print('Saved')
+
+    print('----------------------------')
+
+    plt.figure(1)
+    plt.subplot(211)
+    plt.plot(epsilon_hist)
+    plt.title('Epsilon')
+    plt.subplot(212)
     plt.plot(record)
+    plt.title('Steps')
     plt.show(block=False)
     plt.pause(.000000001)
-
-    if epochs%100 == 0 and len(agent.memory) == agent.buffer_size:
-        agent.save('model-'+str(e)) #zapisz model
-        with open(r'model'+str(e)+'.txt', 'w') as fp: #zapisz wyniki do txt
-            for item in record:
-                # write each item on a new line
-                fp.write("%s\n" % item)
-            print('Done')
-    print('----------------------------')

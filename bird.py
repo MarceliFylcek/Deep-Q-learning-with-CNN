@@ -39,8 +39,10 @@ class FlappyBird:
         self.action_rects = []
         self.action_rects.extend( (pygame.Rect(self.bird.rect.x+self.bird.rect.width/8, 0, 10, 0), pygame.Rect(self.bird.rect.x+self.bird.rect.width/8, 0, 10, 0)) )
 
-
         self.closest_pipe_index = 0
+
+        self.return_image = False
+        self.image_resize = 0.15
 
     def animate_ground(self):
         self.ground_rect_pair[0].x += -3
@@ -118,7 +120,7 @@ class FlappyBird:
 
 
     def get_state(self):
-        dist_x = self.pipes[self.closest_pipe_index].rect[0].x + self.pipes[self.closest_pipe_index].rect[0].width - (self.bird.rect.x)
+        dist_x = self.pipes[self.closest_pipe_index].rect[0].x + self.pipes[self.closest_pipe_index].rect[0].width - self.bird.rect.x
         dist_y = self.pipes[self.closest_pipe_index].rect[0].y - (self.bird.rect.y + self.bird.rect.height)
         if dist_x < 0:
             self.reward = 1
@@ -126,6 +128,14 @@ class FlappyBird:
             if(self.closest_pipe_index)==2: self.closest_pipe_index = 0
         else:
             self.reward = 0
+
+        if self.return_image == True:
+            image = pygame.surfarray.array3d(self.screen)
+            image = np.swapaxes(image, 0, 1)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image = cv2.resize(image, (int(image.shape[1]*self.image_resize),int(image.shape[0]*self.image_resize)), interpolation=cv2.INTER_AREA) #resize
+            image = pixels/255 #normalization
+            return pixels
 
         #return [(self.bird.rect.y+80)/580.0, (self.bird.frame+1)/16.0, dist_x/522.0, (dist_y/1000.0 + 0.5)]
         return [dist_x/522.0, (dist_y/600.0 + 0.5)]
