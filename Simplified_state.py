@@ -94,16 +94,16 @@ class DQNAgent:
 agent = DQNAgent(state_size, action_size)
 # agent.load('trained_model')
 # agent.epsilon = 0
-score = 0
+steps_count = 0
 record = []
 epsilon_hist = []
-epochs = 0
+training_epochs = 0
 for e in range(1, 10000):
 
     print('episode: ' + str(e) + ' Epsilon: ' + str(agent.epsilon))
     state = env.reset()
     state = np.reshape(state, [1, state_size])
-    score = 0
+    steps_count = 0
     env.done = 0
 
     for time in range(0, 1000):
@@ -119,21 +119,21 @@ for e in range(1, 10000):
         next_state = np.reshape(next_state, [1, state_size])
         agent.remember(state, action, reward, next_state, done)
         state = next_state
-        print(epochs)
-        score += 1
+        steps_count += 1
+
         if env.done == 1:
             if len(agent.memory) == agent.buffer_size:
-                print('score:' + str(score))
-                record.append(score)
+                print('score:' + str(steps_count))
+                record.append(steps_count)
                 epsilon_hist.append(agent.epsilon)
             break
 
 
         if len(agent.memory) == agent.buffer_size:
             agent.replay(e)
-            epochs += 1
+            training_epochs += 1
 
-        if epochs%500 == 0 and len(agent.memory) == agent.buffer_size:
+        if training_epochs%1000 == 0 and len(agent.memory) == agent.buffer_size:
             agent.save('model-'+str(len(record))) #zapisz model
             with open(r'model'+str(len(record))+'.txt', 'w') as fp: #zapisz wyniki do txt
                 for item in record:
@@ -150,5 +150,11 @@ for e in range(1, 10000):
     plt.subplot(212)
     plt.plot(record)
     plt.title('Steps')
+    plt.subplots_adjust(left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.4,
+                    hspace=0.4)
     plt.show(block=False)
     plt.pause(.000000001)
