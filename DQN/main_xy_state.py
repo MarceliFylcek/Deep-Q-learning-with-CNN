@@ -10,37 +10,37 @@ import pygame
 import math
 import matplotlib.pyplot as plt
 import os
-from bird import FlappyBird
+from game import FlappyBird
 
-# CZYSZCZENIE KONSOLI
-# clear = lambda: os.system('cls')   #WINDOWS
-clear = lambda: os.system("clear")  # LINUX
+
+clear = lambda: os.system('cls')   #WINDOWS
+# clear = lambda: os.system("clear")  # LINUX
 
 env = FlappyBird(False)
 
-state_size = 2  # <--------
-action_size = 2  # <--------
+state_size = 2
+action_size = 2 
 
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.buffer_size = 10000  # <--------
+        self.buffer_size = 10000
         self.memory = deque(maxlen=self.buffer_size)
         self.gamma = (
-            0.97  # future discount                                 #<--------
+            0.97  # future discount
         )
         self.epsilon = (
-            1.0  # epsilon greedy                                  #<--------
+            1.0  # epsilon greedy
         )
-        self.epsilon_decay = 0.99972  # <--------
-        self.epsilon_min = 0.015  # <--------
+        self.epsilon_decay = 0.99972
+        self.epsilon_min = 0.015
         self.model = self.build_model()
         self.target_model = self.build_model()
         self.target_model.set_weights(self.model.get_weights())
         self.target_copy = (
-            1000  # (co ile stepow taget sie zmienia)         #<-------
+            1000
         )
         self.act_predictions = [0, 0]
 
@@ -48,10 +48,10 @@ class DQNAgent:
         model = Sequential()
         model.add(
             Dense(48, input_dim=self.state_size, activation="relu")
-        )  # <--------
-        model.add(Dense(48, activation="relu"))  # <--------
+        )
+        model.add(Dense(48, activation="relu"))
         model.add(Dense(self.action_size, activation="linear"))
-        model.compile(loss="mse", optimizer=Adam(lr=0.001))  # <--------
+        model.compile(loss="mse", optimizer=Adam(lr=0.001))
         return model
 
     def remember(self, state, action, reward, next_state, done):
@@ -121,13 +121,19 @@ class Evaluator:
     mode = False
 
     def __init__(self):
-        self.score_hist = []  # historia wynikow podczas ewaluacji
-        self.avg_score_hist = []  # historia wszystkich srednich wynikow
-        self.steps_target = 1500  # ilosc klatek podczas ewaluacji
-        self.steps = 0  # licznik stepow
-        self.override = True  # nadpisywanie istniejacych plikow
-        self.q_set_collected = False  # zebranie setu do ewaluacji sredniego Q
-        self.q_set_size = 600  # liczba stanow do zapamietania
+        # All scores from evaluation
+        self.score_hist = []
+        # Average scores during evaluation
+        self.avg_score_hist = []
+        # How many steps per evaluation
+        self.steps_target = 1500
+        # Steps count
+        self.steps = 0
+        # Override existing file
+        self.override = True
+
+        self.q_set_collected = False
+        self.q_set_size = 600
         self.avg_q_hist = []
         self.steps_hist = []
         self.avg_steps_hist = []
@@ -145,8 +151,8 @@ class Evaluator:
     def evaluate_avg_q(self):
         q = agent.model.predict(
             self.q_set
-        )  # zwraca q dla kazdej akcji size x a
-        res = np.average(np.max(q, axis=1))  # srednia(max q wzdluz wierszy)
+        )
+        res = np.average(np.max(q, axis=1))
         self.avg_q_hist.append(res)
 
     def evaluate_score(self):
@@ -177,9 +183,9 @@ class Evaluator:
             train_steps_avg_hist.append(0)
 
     def save(self):
-        path = "DATA_SIMPLE6/results" + ".txt"
+        path = "results" + ".txt"
         if not os.path.exists(path) or self.override == True:
-            with open(path, "w") as fp:  # zapisz wyniki do txt
+            with open(path, "w") as fp:
                 for i in range(len(self.avg_score_hist)):
                     fp.write("%s, " % self.avg_score_hist[i])
                     fp.write("%s, " % self.avg_q_hist[i])
@@ -196,13 +202,15 @@ trainings = 0
 epoch_size = 500
 
 agent = DQNAgent(state_size, action_size)
-# agent.load('DATA_SIMPLE5/model107250')             #load model
+
+# Load pretrained
+# agent.load()
 
 ev = Evaluator()
-train_score_hist = deque(maxlen=25)  # <------
+train_score_hist = deque(maxlen=25)
 train_score_avg_hist = []
 
-train_steps_hist = deque(maxlen=25)  # <------
+train_steps_hist = deque(maxlen=25)
 train_steps_avg_hist = []
 
 
@@ -223,7 +231,7 @@ for e in range(0, 10000):
         env.render(agent.act_predictions[0], agent.act_predictions[1])
         action = agent.act(state)
         next_state, reward, done, _ = env.step(action)
-        reward = reward if not done else -1  # <---------
+        reward = reward if not done else -1
 
         steps += 1
         score += reward
@@ -237,13 +245,13 @@ for e in range(0, 10000):
         if (
             trainings % epoch_size == 0
             and len(agent.memory) == agent.buffer_size
-        ):  # EWALUACJA
+        ):
             if not Evaluator.mode:
                 if not ev.q_set_collected:
                     ev.get_q_set(agent.memory)
                 ev.evaluate_avg_q()
                 Evaluator.mode = True
-                print("EWALUACJA")
+                print("EVAL")
                 ev.prev_epsilon = agent.epsilon
                 agent.epsilon = agent.epsilon_min
                 break
@@ -253,7 +261,7 @@ for e in range(0, 10000):
                 Evaluator.mode = False
                 ev.steps = 0
                 ev.evaluate_score()
-                print("Koniec ewaluacji")
+                print("Eval completed")
                 ev.save()
                 agent.epsilon = ev.prev_epsilon
                 agent.replay(trainings)
@@ -268,7 +276,7 @@ for e in range(0, 10000):
             print("replay")
             trainings += 1
 
-        if done:  # po każdym episodzie
+        if done:
             if Evaluator.mode:
                 ev.score_hist.append(score)
                 ev.steps_hist.append(steps)
@@ -283,4 +291,4 @@ for e in range(0, 10000):
                     print("score:" + str(score))
                     train_score_hist.append(score)
                     train_steps_hist.append(steps)
-            break  # zakoncz episod
+            break

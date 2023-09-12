@@ -5,7 +5,7 @@ import os
 import random
 import numpy as np
 from collections import deque
-from bird import FlappyBird
+from game import FlappyBird
 import matplotlib.pyplot as plt
 #from google.colab import drive
 import pickle
@@ -32,7 +32,7 @@ class DQNAgent:
         self.memory = deque(maxlen=self.buffer_size)
         self.gamma  = 0.97 #future discount
         self.epsilon = 1.0 #epsilon greedy
-        self.epsilon_decay = 0.99992#0.99996
+        self.epsilon_decay = 0.99992
         self.epsilon_min = 0.02
         self.model = self.build_model()
         self.target_model = self.build_model()
@@ -112,17 +112,17 @@ class DQNAgent:
 class Evaluator:
     mode = False
     def __init__(self):
-        self.score_hist    = []        #historia wynikow podczas ewaluacji
-        self.avg_score_hist= []        #historia wszystkich srednich wynikow
-        self.steps_target  = 2000       #ilosc klatek podczas ewaluacji
+        self.score_hist    = []
+        self.avg_score_hist= []
+        self.steps_target  = 2000
 
-        self.steps         = 0         #licznik stepow
+        self.steps         = 0
 
-        self.override      = True      #nadpisywanie istniejacych plikow
+        self.override      = True
 
         self.q_set = []
-        self.q_set_collected = False   #zebranie setu do ewaluacji sredniego Q
-        self.q_set_size      = 5000    #liczba stanow do zapamietania
+        self.q_set_collected = False
+        self.q_set_size      = 5000
         self.avg_q_hist      = []
         self.saves = 0
         self.steps_hist = []
@@ -139,24 +139,19 @@ class Evaluator:
         self.q_set_collected = True
 
     def evaluate_avg_q(self):
-        q = agent.model.predict(self.q_set) #zwraca q dla kazdej akcji size x a
-        res = np.average(np.max(q, axis = 1))    #srednia(max q wzdluz wierszy)
+        q = agent.model.predict(self.q_set)
+        res = np.average(np.max(q, axis = 1))
         self.avg_q_hist.append(res)
-
 
     def evaluate_score(self):
         sum = 0
         sum_t = 0
        
-
         for i in range(len(self.score_hist)):
             sum += self.score_hist[i]
-          
 
         self.avg_score_hist.append(sum/len(self.score_hist))
         self.score_hist = []
-
-       
 
         for i in range(len(train_score_hist)):
             sum_t += train_score_hist[i]
@@ -166,25 +161,24 @@ class Evaluator:
         else:
             train_score_avg_hist.append(0)
 
-
     def save(self, e):
-        path = '/content/gdrive/My Drive/dqnCNN2/flappy_cnn7' + '.txt'
+        path = 'output.txt'
         if not os.path.exists(path) or self.override == True :
-            with open(path, 'w') as fp:         #zapisz wyniki do txt
+            with open(path, 'w') as fp:
                 for i in range(len(self.avg_score_hist)):
                     fp.write("%s, " % self.avg_score_hist[i])
                     fp.write("%s, " % self.avg_q_hist[i])
                     fp.write("%s\n" % train_score_avg_hist[i])
             print('Saved')
             if self.saves%3==0:
-              agent.save("/content/gdrive/My Drive/dqnCNN2/fl"+str(trainings)+"e"+str(ev.prev_epsilon))
+              agent.save("model"+str(trainings)+"e"+str(ev.prev_epsilon))
 
               data = [agent.memory, self.q_set, agent.epsilon, self.avg_score_hist, self.avg_q_hist, train_score_hist, train_score_avg_hist, trainings, e]
 
               if self.saves%2==0:
-                  d_path = ("/content/gdrive/My Drive/dqnCNN2/data_p.dat")
+                  d_path = ("data_p.dat")
               else:
-                  d_path = ("/content/gdrive/My Drive/dqnCNN2/data.dat")
+                  d_path = ("data.dat")
   
               with open(d_path, "wb") as f:
                   pickle.dump(data, f)
@@ -194,9 +188,9 @@ class Evaluator:
             print("File already exists")
 
     def load(self):
-        agent.load("/content/gdrive/My Drive/dqnCNN2/fl124001e0.019998930434274764") #<------------
+        #agent.load()
         self.q_set_collected = True
-        d_path = ("/content/gdrive/My Drive/dqnCNN2/data_p.dat")
+        d_path = ("data_p.dat")
         data = []
         with open(d_path, "rb") as f:
             data = pickle.load(f)
@@ -214,7 +208,6 @@ class Evaluator:
         trainings = data[7]
         global e_start
         e_start = data[8]
-
 
 def make_move(action):
      done = 0
@@ -239,11 +232,9 @@ ev = Evaluator()
 train_score_hist = deque(maxlen=25)
 train_score_avg_hist = []
 
-
 e_start = 0
 recent_frames = deque(maxlen=3)
-ev.load()
-
+# ev.load()
 
 for e in range(e_start, 10000000000):
     frame = env.reset()
@@ -262,12 +253,9 @@ for e in range(e_start, 10000000000):
         print("Trainings: "+ str(trainings))
         print("Epsilon " + str(agent.epsilon))
         print("Evaluation: "+ str(ev.mode))
-        # for event in pygame.event.get():
-        #     if event.type == pygame.QUIT: sys.exit()
-
 
         action = agent.act(state)
-        #env.render(0, 0)
+        env.render(0, 0)
 
         next_state, reward, done, _ = make_move(action) #get next frame
 
@@ -278,7 +266,6 @@ for e in range(e_start, 10000000000):
             agent.remember(state, action, reward, next_state, done)
 
         state = copy.deepcopy(next_state)
-
         if trainings%epoch_size == 0 and len(agent.memory) == agent.buffer_size:       #EWALUACJA
             if not Evaluator.mode:
                 if not ev.q_set_collected:
@@ -320,7 +307,7 @@ for e in range(e_start, 10000000000):
                 if len(agent.memory) == agent.buffer_size and not Evaluator.mode:
                     print('score:' + str(score))
                     train_score_hist.append(score)
-            break #zakoncz episod
+            break
 
 
         
