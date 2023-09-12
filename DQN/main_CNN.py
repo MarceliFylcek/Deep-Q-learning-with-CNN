@@ -1,15 +1,11 @@
-!pip install pygame
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten
 from tensorflow.keras.optimizers import Adam, RMSprop
-import os, sys
+import os
 import random
 import numpy as np
 from collections import deque
-import pygame
 from bird import FlappyBird
-import math
-import cv2
 import matplotlib.pyplot as plt
 #from google.colab import drive
 import pickle
